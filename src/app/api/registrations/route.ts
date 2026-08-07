@@ -3,6 +3,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { registrations } from "@/db/schema";
 import { isAdmin } from "@/lib/auth";
+import { notifyNewRegistration } from "@/lib/telegram";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,18 @@ export async function POST(req: NextRequest) {
         documentPublicId: body.documentPublicId || null,
       })
       .returning();
+
+    try {
+      await notifyNewRegistration({
+        childName,
+        parentName,
+        phone,
+        program: body.program || "Calistung Dasar",
+        schedule: body.schedule || "Senin & Rabu (15.30)",
+      });
+    } catch {
+      // jangan gagalkan pendaftaran hanya karena notifikasi gagal
+    }
 
     return NextResponse.json({ ok: true, data: row }, { status: 201 });
   } catch (err) {
