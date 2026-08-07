@@ -43,9 +43,14 @@ function uploadStream(
   options: Record<string, unknown>,
 ): Promise<UploadResult> {
   return new Promise((resolve, reject) => {
+    if (!cloudinary.uploader?.upload_stream) {
+      reject(new Error("Cloudinary uploader tidak tersedia."));
+      return;
+    }
     const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
       if (error || !result) {
-        reject(error ?? new Error("Upload gagal tanpa keterangan."));
+        const msg = typeof error === "string" ? error : error?.message ?? "Upload gagal tanpa keterangan.";
+        reject(new Error(msg));
         return;
       }
       resolve(result as unknown as UploadResult);
@@ -54,16 +59,16 @@ function uploadStream(
   });
 }
 
-/**
- * Upload buffer ke Cloudinary. Mencoba memakai upload preset yang sudah
- * disiapkan; jika preset ditolak, otomatis fallback ke signed upload biasa.
- */
 export async function uploadToCloudinary(
   buffer: Buffer,
   opts: { folder?: string; filename?: string; resourceType?: "auto" | "image" | "video" | "raw" } = {},
 ): Promise<UploadedAsset> {
   if (!cloudinaryConfigured) {
     throw new Error("Kredensial Cloudinary belum dikonfigurasi.");
+  }
+
+  if (!buffer || buffer.length === 0) {
+    throw new Error("Berkas kosong.");
   }
 
   const folder = [CLOUDINARY_ROOT_FOLDER, opts.folder].filter(Boolean).join("/");
@@ -84,8 +89,14 @@ export async function uploadToCloudinary(
         ? { upload_preset: CLOUDINARY_UPLOAD_PRESET }
         : base,
     );
-  } catch {
-    result = await uploadStream(buffer, base);
+  } catch (firstErr) {
+    console.error("[cloudinary] preset upload failed:", firstErr);
+    try {
+      result = await uploadStream(buffer, base);
+    } catch (fallbackErr) {
+      console.error("[cloudinary] fallback upload failed:", fallbackErr);
+      throw fallbackErr instanceof Error ? fallbackErr : new Error(String(fallbackErr));
+    }
   }
 
   return {
@@ -109,7 +120,6 @@ export async function destroyFromCloudinary(publicId?: string | null, resourceTy
   }
 }
 
-/** Bangun URL transformasi Cloudinary (resize + optimasi otomatis) */
 export function cldThumb(url: string, width = 640, height?: number) {
   if (!url.includes("/upload/")) return url;
   const t = ["f_auto", "q_auto", `w_${width}`, height ? `h_${height}` : "", height ? "c_fill" : "c_limit", "g_auto"]
