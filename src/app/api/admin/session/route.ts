@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { checkPassword, createSession, destroySession, isAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +7,7 @@ export async function GET() {
   return NextResponse.json({ authenticated: await isAdmin() });
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { password?: string };
   if (!body.password || !checkPassword(body.password)) {
     return NextResponse.json({ error: "Kata sandi salah." }, { status: 401 });

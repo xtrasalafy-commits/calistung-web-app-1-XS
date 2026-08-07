@@ -70,8 +70,6 @@ export async function uploadToCloudinary(
   const base: Record<string, unknown> = {
     folder,
     resource_type: opts.resourceType ?? "auto",
-    use_filename: true,
-    unique_filename: true,
     overwrite: false,
   };
   if (opts.filename) {
