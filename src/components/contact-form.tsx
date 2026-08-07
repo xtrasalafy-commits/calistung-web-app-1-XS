@@ -20,7 +20,12 @@ export function ContactForm() {
           body: form.get("body"),
         }),
       });
-      const json = (await res.json()) as { error?: string };
+      let json: { error?: string } = {};
+      try {
+        json = (await res.json()) as { error?: string };
+      } catch {
+        // ignore JSON parse error
+      }
       if (!res.ok) throw new Error(json.error ?? "Gagal mengirim pesan.");
       setState("done");
       setMsg("Terima kasih! Pesan Bunda/Ayah sudah kami terima. Tim kami akan membalas lewat WhatsApp.");

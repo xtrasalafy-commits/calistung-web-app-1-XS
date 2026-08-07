@@ -55,7 +55,12 @@ export function RegistrationForm() {
           documentPublicId: doc?.publicId ?? null,
         }),
       });
-      const json = (await res.json()) as { error?: string };
+      let json: { error?: string } = {};
+      try {
+        json = (await res.json()) as { error?: string };
+      } catch {
+        // ignore JSON parse error
+      }
       if (!res.ok) throw new Error(json.error ?? "Pendaftaran gagal.");
       setDone(true);
     } catch (err) {

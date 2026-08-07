@@ -80,7 +80,9 @@ export async function uploadToCloudinary(
   try {
     result = await uploadStream(
       buffer,
-      CLOUDINARY_UPLOAD_PRESET ? { ...base, upload_preset: CLOUDINARY_UPLOAD_PRESET } : base,
+      CLOUDINARY_UPLOAD_PRESET
+        ? { upload_preset: CLOUDINARY_UPLOAD_PRESET }
+        : base,
     );
   } catch {
     result = await uploadStream(buffer, base);

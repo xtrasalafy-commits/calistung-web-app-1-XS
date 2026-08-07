@@ -39,7 +39,12 @@ export function UploadField({
       fd.append("file", file);
       fd.append("folder", folder);
       const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const json = (await res.json()) as { asset?: UploadedAsset; error?: string };
+      let json: { asset?: UploadedAsset; error?: string } = {};
+      try {
+        json = (await res.json()) as { asset?: UploadedAsset; error?: string };
+      } catch {
+        // ignore JSON parse error
+      }
       if (!res.ok || !json.asset) throw new Error(json.error ?? "Gagal mengunggah.");
       setDone(json.asset);
       onUploaded(json.asset);

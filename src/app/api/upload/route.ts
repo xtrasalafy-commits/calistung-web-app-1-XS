@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, asset });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Gagal mengunggah berkas.";
+    console.error("[upload]", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -53,7 +53,12 @@ const card = "card-soft rounded-3xl border border-emerald-100 bg-white p-6";
 
 async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
-  const data = (await res.json()) as T & { error?: string };
+  let data: T & { error?: string } = {} as T & { error?: string };
+  try {
+    data = (await res.json()) as T & { error?: string };
+  } catch {
+    // ignore JSON parse error
+  }
   if (!res.ok) throw new Error(data.error ?? "Terjadi kesalahan.");
   return data;
 }

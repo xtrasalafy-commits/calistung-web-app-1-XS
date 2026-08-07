@@ -9,24 +9,33 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Tambah hitungan unduhan */
 export async function POST(_req: NextRequest, { params }: Ctx) {
-  const { id } = await params;
-  await db
-    .update(materials)
-    .set({ downloads: sql`${materials.downloads} + 1` })
-    .where(eq(materials.id, Number(id)));
-  return NextResponse.json({ ok: true });
+  try {
+    const { id } = await params;
+    await db
+      .update(materials)
+      .set({ downloads: sql`${materials.downloads} + 1` })
+      .where(eq(materials.id, Number(id)));
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[materials POST]", err);
+    return NextResponse.json({ error: "Gagal memperbarui unduhan." }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
-  if (!(await isAdmin())) {
-    return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+  try {
+    if (!(await isAdmin())) {
+      return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+    }
+    const { id } = await params;
+    const [row] = await db.delete(materials).where(eq(materials.id, Number(id))).returning();
+    if (row?.publicId) {
+      await destroyFromCloudinary(row.publicId, row.kind === "video" ? "video" : row.kind === "pdf" ? "image" : "image");
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[materials DELETE]", err);
+    return NextResponse.json({ error: "Gagal menghapus materi." }, { status: 500 });
   }
-  const { id } = await params;
-  const [row] = await db.delete(materials).where(eq(materials.id, Number(id))).returning();
-  if (row?.publicId) {
-    await destroyFromCloudinary(row.publicId, row.kind === "video" ? "video" : row.kind === "pdf" ? "image" : "image");
-  }
-  return NextResponse.json({ ok: true });
 }
