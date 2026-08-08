@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { UploadField, type UploadedAsset } from "@/components/upload-field";
 import { LEVELS, MATERIAL_CATEGORIES, PROGRAMS } from "@/lib/content";
 import { formatBytes, formatDate } from "@/components/ui";
@@ -65,8 +66,6 @@ async function jsonFetch<T>(url: string, init?: RequestInit): Promise<T> {
 
 export default function AdminPage() {
   const [auth, setAuth] = useState<boolean | null>(null);
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabId>("ringkasan");
 
   const [stats, setStats] = useState<Stats | null>(null);
@@ -105,21 +104,11 @@ export default function AdminPage() {
       .catch(() => setAuth(false));
   }, [loadAll]);
 
-  async function login(e: React.FormEvent) {
-    e.preventDefault();
-    setLoginError(null);
-    try {
-      await jsonFetch("/api/admin/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
-      });
-      setAuth(true);
-      await loadAll();
-    } catch (err) {
-      setLoginError(err instanceof Error ? err.message : "Gagal masuk.");
-    }
-  }
+  const router = useRouter();
+
+  useEffect(() => {
+    if (auth === false) router.replace("/login");
+  }, [auth, router]);
 
   async function logout() {
     await fetch("/api/admin/session", { method: "DELETE" });
@@ -146,27 +135,7 @@ export default function AdminPage() {
   }
 
   if (!auth) {
-    return (
-      <div className="mx-auto grid min-h-[70vh] max-w-md place-items-center px-4">
-        <form onSubmit={login} className={`${card} w-full text-center`}>
-          <div className="text-5xl">🔐</div>
-          <h1 className="font-display mt-3 text-2xl font-extrabold text-emerald-900">Panel Admin</h1>
-          <p className="mt-1 text-sm text-slate-500">Masuk untuk mengelola data Ya Bunayya.</p>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Kata sandi admin"
-            className={`${input} mt-5 text-center`}
-          />
-          {loginError ? <p className="mt-2 text-sm font-semibold text-rose-600">{loginError}</p> : null}
-          <button type="submit" className="mt-4 w-full rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white hover:bg-emerald-700">
-            Masuk
-          </button>
-          <p className="mt-4 text-xs text-slate-400">Sandi bawaan: yabunayya2026</p>
-        </form>
-      </div>
-    );
+    return <div className="grid min-h-[60vh] place-items-center text-slate-400">Mengalihkan ke halaman masuk...</div>;
   }
 
   const statCards = stats
